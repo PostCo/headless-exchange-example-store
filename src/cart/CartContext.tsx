@@ -29,7 +29,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    window.__moxieCartStore = cartStore;
     // Sync the persisted cart with Shopify on load: the return center empties
     // the cart after an exchange, so a fresh visit must reflect that.
     void cartStore.hydrate();
@@ -67,10 +66,4 @@ export function useCart() {
     throw new Error("useCart must be used within CartProvider.");
   }
   return value;
-}
-
-declare global {
-  interface Window {
-    __moxieCartStore?: typeof cartStore;
-  }
 }
