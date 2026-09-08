@@ -1,0 +1,29 @@
+{
+  "name": "headless-exchange-example-store",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.19.5"
+  },
+  "scripts": {
+    "dev": "next dev -p 3005",
+    "build": "next build",
+    "start": "next start -p 3005",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@postco/headless-exchange-sdk": "^0.1.2",
+    "@shopify/storefront-api-client": "^1",
+    "next": "^15",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15",
+    "typescript": "^5"
+  }
+}
