@@ -4,7 +4,19 @@ import type { CartSnapshot } from "@/lib/shopify/types";
 
 type Listener = () => void;
 
-let snapshot: CartSnapshot | null = null;
+const STORAGE_KEY = "example-store-cart";
+
+function load(): CartSnapshot | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as CartSnapshot) : null;
+  } catch {
+    return null; // corrupt or blocked storage: start empty
+  }
+}
+
+let snapshot: CartSnapshot | null = load();
 const listeners = new Set<Listener>();
 
 function emit() {
@@ -13,18 +25,33 @@ function emit() {
   }
 }
 
+// A real store persists the cart so it survives reloads and is shared across
+// tabs. We save the whole snapshot to localStorage and mirror changes from
+// other tabs via the `storage` event.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key !== STORAGE_KEY) return;
+    snapshot = load();
+    emit();
+  });
+}
+
 /**
- * External cart store the future SDK reads via dependency injection:
+ * External cart store the SDK reads via dependency injection:
  *
  *   initExchange({
  *     getCart: () => cartStore.getSnapshot(),
  *     subscribe: (cb) => cartStore.subscribe(cb),
+ *     clearCart: () => cartStore.setSnapshot(null),
  *   })
  *
- * The SDK must not import this module — layout.tsx will pass these functions in.
+ * The SDK must not import this module — layout.tsx passes these functions in.
  */
 export const cartStore = {
   getSnapshot: (): CartSnapshot | null => snapshot,
+  // Server renders with an empty cart (no localStorage there). Hydration must
+  // match that, then useSyncExternalStore re-reads getSnapshot on the client.
+  getServerSnapshot: (): CartSnapshot | null => null,
   subscribe: (cb: Listener): (() => void) => {
     listeners.add(cb);
     return () => {
@@ -33,6 +60,17 @@ export const cartStore = {
   },
   setSnapshot: (next: CartSnapshot | null) => {
     snapshot = next;
+    if (typeof window !== "undefined") {
+      try {
+        if (next) {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } else {
+          window.localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch {
+        // storage full or blocked: keep the in-memory value, skip persistence
+      }
+    }
     emit();
   },
 };

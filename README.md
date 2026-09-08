@@ -46,13 +46,12 @@ error, which is expected.
 
 ## Where the SDK is wired
 
-- `src/cart/cartStore.ts` — an in-memory cart store (the source of truth).
+- `src/cart/cartStore.ts` — the cart store (source of truth). It persists to
+  `localStorage`, so the cart survives reloads and is shared across tabs, like a
+  real store.
 - `src/components/ExchangeStatusBar.tsx` — builds the `CartAdapter`, calls
   `initExchange`, and renders the status bar.
 - `src/components/PostcoStatusBar.tsx` — the copyable status-bar UI.
-
-The cart lives in memory, so any full page reload clears it. That is fine for a
-demo; a real store would keep the cart in its own store or `localStorage`.
 
 ## Verify
 
