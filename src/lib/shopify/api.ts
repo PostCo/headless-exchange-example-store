@@ -1,6 +1,6 @@
 import { getStorefrontClient } from "./client";
 import { CART_CREATE, CART_LINES_ADD } from "./mutations";
-import { PRODUCT_BY_HANDLE_QUERY, PRODUCTS_QUERY } from "./queries";
+import { CART_QUERY, PRODUCT_BY_HANDLE_QUERY, PRODUCTS_QUERY } from "./queries";
 import type {
   CartSnapshot,
   Product,
@@ -173,6 +173,27 @@ type CartLinesAddResponse = {
     userErrors: ShopifyUserError[];
   };
 };
+
+type CartQueryResponse = {
+  cart: ShopifyCart | null;
+};
+
+/**
+ * Re-fetch the live cart from Shopify by its GID. Returns null when the cart no
+ * longer exists (expired). An emptied cart comes back with `lines: []`.
+ *
+ * The return center empties the Shopify cart (cartLinesRemove) right after it
+ * creates an exchange, so a store must re-fetch to see that — a cached local
+ * snapshot would show stale items on the shopper's next exchange.
+ */
+export async function fetchCart(cartId: string): Promise<CartSnapshot | null> {
+  const client = getStorefrontClient();
+  const response = (await client.request(CART_QUERY, {
+    variables: { cartId },
+  })) as StorefrontResponse<CartQueryResponse>;
+  const data = assertData(response, "Storefront cart query returned no data.");
+  return data.cart ? mapCartToSnapshot(data.cart) : null;
+}
 
 export async function createCart(variantId: string, quantity: number): Promise<CartSnapshot> {
   const client = getStorefrontClient();

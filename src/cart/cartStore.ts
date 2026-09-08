@@ -1,5 +1,6 @@
 "use client";
 
+import { fetchCart } from "@/lib/shopify/api";
 import type { CartSnapshot } from "@/lib/shopify/types";
 
 type Listener = () => void;
@@ -72,6 +73,19 @@ export const cartStore = {
       }
     }
     emit();
+  },
+  // Re-fetch the live cart from Shopify by its stored id. The saved snapshot is
+  // only a fast first paint; Shopify is the source of truth. This is what keeps
+  // the cart honest: when the return center empties it after an exchange, the
+  // next load reflects that instead of showing the old items.
+  hydrate: async (): Promise<void> => {
+    const id = snapshot?.id;
+    if (typeof window === "undefined" || !id) return;
+    try {
+      cartStore.setSnapshot(await fetchCart(id));
+    } catch {
+      // Network error: keep the cached snapshot rather than wiping the cart.
+    }
   },
 };
 

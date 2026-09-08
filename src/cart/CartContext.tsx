@@ -30,6 +30,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     window.__moxieCartStore = cartStore;
+    // Sync the persisted cart with Shopify on load: the return center empties
+    // the cart after an exchange, so a fresh visit must reflect that.
+    void cartStore.hydrate();
   }, []);
 
   const addVariant = useCallback(async (variantId: string, quantity = 1) => {
