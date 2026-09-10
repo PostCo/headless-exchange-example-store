@@ -8,7 +8,6 @@ import {
   type ExchangeState,
 } from "@postco/headless-exchange-sdk";
 import { cartStore } from "@/cart/cartStore";
-import { TestModeModal } from "./TestModeModal";
 
 // Same CartAdapter shape the status bar builds — the SDK ships no default, so
 // each integration point maps its own cart onto it.
@@ -31,7 +30,6 @@ export function CheckoutButton() {
   const cart = useSyncExternalStore(cartStore.subscribe, cartStore.getSnapshot, cartStore.getSnapshot);
   const [controller, setController] = useState<ExchangeController | null>(null);
   const [state, setState] = useState<ExchangeState | null>(null);
-  const [testModeOpen, setTestModeOpen] = useState(false);
 
   useEffect(() => {
     const c = initExchange({ cart: adapter });
@@ -43,32 +41,33 @@ export function CheckoutButton() {
     };
   }, []);
 
-  const handleProceed = (): void => {
-    if (state?.isTestMode) setTestModeOpen(true);
-    controller?.proceedToExchange();
-  };
+  // In an exchange session, override checkout to proceed to the exchange. Real
+  // mode redirects to the return center; test mode ends the session and the SDK
+  // shows its own dev-only modal.
+  if (state?.isExchangeSession && controller) {
+    return (
+      <button
+        type="button"
+        className="checkout__button"
+        onClick={() => controller.proceedToExchange()}
+        disabled={!state.cartId}
+      >
+        Proceed with exchange
+      </button>
+    );
+  }
 
+  // Normal Shopify checkout.
+  if (cart?.checkoutUrl) {
+    return (
+      <a className="checkout__button" href={cart.checkoutUrl}>
+        Check out
+      </a>
+    );
+  }
   return (
-    <>
-      {state?.isExchangeSession && controller ? (
-        <button
-          type="button"
-          className="checkout__button"
-          onClick={handleProceed}
-          disabled={!state.cartId}
-        >
-          Proceed with exchange
-        </button>
-      ) : cart?.checkoutUrl ? (
-        <a className="checkout__button" href={cart.checkoutUrl}>
-          Check out
-        </a>
-      ) : (
-        <button type="button" className="checkout__button" disabled>
-          Check out
-        </button>
-      )}
-      {testModeOpen && <TestModeModal action="proceed" onClose={() => setTestModeOpen(false)} />}
-    </>
+    <button type="button" className="checkout__button" disabled>
+      Check out
+    </button>
   );
 }

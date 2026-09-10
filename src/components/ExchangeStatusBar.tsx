@@ -62,8 +62,8 @@ export function ExchangeStatusBar() {
       c.destroy();
       // --- DEV-ONLY: uncomment (with DEMO_TEST_MODE above) to preview the bar
       // without a real handoff. In test mode the SDK ends the session (bar
-      // drops) instead of redirecting; the status bar / checkout button show the
-      // TestModeModal. ---
+      // drops) instead of redirecting and shows its own built-in test-mode
+      // modal. ---
       // const demo = initExchange({ cart: adapter, testMode: DEMO_TEST_MODE, debug: true });
       // setController(demo);
       // return () => demo.destroy();
