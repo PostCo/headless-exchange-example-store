@@ -1,21 +1,8 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-import {
-  initExchange,
-  type CartAdapter,
-  type ExchangeController,
-  type ExchangeState,
-} from "@postco/headless-exchange-sdk";
+import { useSyncExternalStore } from "react";
 import { cartStore } from "@/cart/cartStore";
-
-// Same CartAdapter shape the status bar builds — the SDK ships no default, so
-// each integration point maps its own cart onto it.
-const adapter: CartAdapter = {
-  getCart: () => cartStore.getSnapshot(),
-  subscribe: (cb) => cartStore.subscribe(cb),
-  clearCart: () => cartStore.setSnapshot(null),
-};
+import { useExchange } from "@/exchange/ExchangeProvider";
 
 /**
  * Cart checkout button.
@@ -25,21 +12,13 @@ const adapter: CartAdapter = {
  * `controller.proceedToExchange()` — which redirects back to the return center
  * (or, in test mode, ends the session and shows the dev modal instead of
  * redirecting). Outside an exchange it's a normal Shopify checkout.
+ *
+ * The controller comes from the shared `ExchangeProvider`, so this button and
+ * the status bar always agree on the current session.
  */
 export function CheckoutButton() {
   const cart = useSyncExternalStore(cartStore.subscribe, cartStore.getSnapshot, cartStore.getSnapshot);
-  const [controller, setController] = useState<ExchangeController | null>(null);
-  const [state, setState] = useState<ExchangeState | null>(null);
-
-  useEffect(() => {
-    const c = initExchange({ cart: adapter });
-    setController(c);
-    const unsub = c.subscribe(setState);
-    return () => {
-      unsub();
-      c.destroy();
-    };
-  }, []);
+  const { controller, state } = useExchange();
 
   // In an exchange session, override checkout to proceed to the exchange. Real
   // mode redirects to the return center; test mode ends the session and the SDK

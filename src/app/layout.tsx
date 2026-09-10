@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { CartProvider } from "@/cart/CartContext";
+import { ExchangeProvider } from "@/exchange/ExchangeProvider";
 import { SiteNav } from "@/components/SiteNav";
 import { ExchangeStatusBar } from "@/components/ExchangeStatusBar";
 import "./globals.css";
@@ -18,18 +19,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <CartProvider>
-          <ExchangeStatusBar />
-          <header className="site-header">
-            <Link className="site-title" href="/">
-              Sunday Supply
-            </Link>
-            <SiteNav />
-          </header>
-          <main className="site-main">{children}</main>
-          <footer className="site-footer">
-            <p>Sunday Supply Co.</p>
-            <p>Apparel, goods, and the occasional gift card.</p>
-          </footer>
+          <ExchangeProvider>
+            <ExchangeStatusBar />
+            <header className="site-header">
+              <Link className="site-title" href="/">
+                Sunday Supply
+              </Link>
+              <SiteNav />
+            </header>
+            <main className="site-main">{children}</main>
+            <footer className="site-footer">
+              <p>Sunday Supply Co.</p>
+              <p>Apparel, goods, and the occasional gift card.</p>
+            </footer>
+          </ExchangeProvider>
         </CartProvider>
       </body>
     </html>
