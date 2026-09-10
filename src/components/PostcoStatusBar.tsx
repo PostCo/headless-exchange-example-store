@@ -8,13 +8,13 @@
  * still flow through the `@postco/headless-exchange-sdk` npm package — never
  * reimplement them here.
  *
- * Usage (e.g. a Next.js client component):
+ * Usage (this store — see ExchangeStatusBar.tsx):
  *   "use client";
- *   import { initExchange } from "@postco/headless-exchange-sdk";
+ *   import { useExchange } from "@/exchange/ExchangeProvider";
  *   import { PostcoStatusBar } from "./PostcoStatusBar";
  *
- *   const controller = initExchange(); // default Shopify cart adapter
- *   return <PostcoStatusBar controller={controller} />;
+ *   const { controller } = useExchange(); // initExchange({ cart }) runs once in ExchangeProvider
+ *   return controller ? <PostcoStatusBar controller={controller} /> : null;
  */
 
 import { useEffect, useState } from "react";

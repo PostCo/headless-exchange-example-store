@@ -41,12 +41,15 @@ if (typeof window !== "undefined") {
  * External cart store the SDK reads via dependency injection:
  *
  *   initExchange({
- *     getCart: () => cartStore.getSnapshot(),
- *     subscribe: (cb) => cartStore.subscribe(cb),
- *     clearCart: () => cartStore.setSnapshot(null),
+ *     cart: {
+ *       getCart: () => cartStore.getSnapshot(),
+ *       subscribe: (cb) => cartStore.subscribe(cb),
+ *       clearCart: () => cartStore.setSnapshot(null),
+ *     },
  *   })
  *
- * The SDK must not import this module — layout.tsx passes these functions in.
+ * The SDK must not import this module — ExchangeProvider.tsx passes these
+ * functions in as the CartAdapter.
  */
 export const cartStore = {
   getSnapshot: (): CartSnapshot | null => snapshot,

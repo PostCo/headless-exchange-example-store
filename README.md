@@ -7,7 +7,9 @@ lets a shopper build a cart, and hands that cart back to the PostCo return
 center to finish an exchange.
 
 Use it as a reference: copy the cart adapter, the status bar, and the checkout
-wiring into your own store.
+wiring into your own store. The step-by-step guide (with a video of the full
+loop) walks through this repo file by file:
+**[docs.postco.co/headless-exchange-sdk](https://docs.postco.co/headless-exchange-sdk)**.
 
 ## Run
 
@@ -46,12 +48,27 @@ error, which is expected.
 
 ## Where the SDK is wired
 
-- `src/cart/cartStore.ts` — the cart store (source of truth). It persists to
-  `localStorage`, so the cart survives reloads and is shared across tabs, like a
-  real store.
-- `src/components/ExchangeStatusBar.tsx` — builds the `CartAdapter`, calls
-  `initExchange`, and renders the status bar.
-- `src/components/PostcoStatusBar.tsx` — the copyable status-bar UI.
+In the order you'd add them to your own store:
+
+| File | Role |
+| --- | --- |
+| `src/cart/cartStore.ts` | The cart store (source of truth). Persists to `localStorage`; `hydrate()` re-fetches the live cart on load because PostCo empties it after an exchange. |
+| `src/exchange/ExchangeProvider.tsx` | Builds the `CartAdapter` over `cartStore`, calls `initExchange` **once**, and shares `{ controller, state }` via context (`useExchange()`). |
+| `src/app/layout.tsx` | Mounts `ExchangeProvider` and renders `ExchangeStatusBar` inside it. |
+| `src/components/PostcoStatusBar.tsx` | The copied status-bar template (`npx @postco/headless-exchange-sdk add status-bar`). Restyle freely; the exchange math stays in the package. |
+| `src/components/ExchangeStatusBar.tsx` | Renders the template from the shared controller. |
+| `src/components/CheckoutButton.tsx` | Checkout override: when `state.isExchangeSession` is true it calls `controller.proceedToExchange()` instead of Shopify checkout. |
+
+## Test mode
+
+To see the status bar without a real return-center handoff, open
+`src/exchange/ExchangeProvider.tsx`, uncomment `DEMO_TEST_MODE`, and swap the
+`initExchange` line for the one that passes `testMode`. The bar then shows on
+any visit. Proceed and Cancel show the SDK's built-in test-mode modal instead
+of redirecting.
+
+Re-comment it when you're done, and clear the `postco:exchange-session` key
+from `localStorage`. A test session is persisted like a real one.
 
 ## Verify
 
