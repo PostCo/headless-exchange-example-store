@@ -7,12 +7,19 @@ import { CheckoutButton } from "@/components/CheckoutButton";
 import { formatMoney } from "@/lib/money";
 
 export default function CartPage() {
-  const { cart } = useCart();
+  const { cart, removeLine, clearCart, pending } = useCart();
   const isEmpty = !cart || cart.lines.length === 0;
 
   return (
     <div className="cart-page">
-      <h1>Your cart</h1>
+      <div className="cart-page__header">
+        <h1>Your cart</h1>
+        {!isEmpty ? (
+          <button type="button" className="cart-clear" onClick={() => void clearCart()} disabled={pending}>
+            Clear cart
+          </button>
+        ) : null}
+      </div>
       {isEmpty ? (
         <div className="cart-empty">
           <p className="cart-empty__title">Your cart is empty</p>
@@ -47,6 +54,15 @@ export default function CartPage() {
                     <p className="cart-line__qty">Qty {line.quantity}</p>
                   </div>
                   <p className="cart-line__price">{formatMoney(line.cost)}</p>
+                  <button
+                    type="button"
+                    className="cart-line__remove"
+                    aria-label={`Remove ${title} from cart`}
+                    onClick={() => void removeLine(line.id)}
+                    disabled={pending}
+                  >
+                    ×
+                  </button>
                 </li>
               );
             })}

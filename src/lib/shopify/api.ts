@@ -1,5 +1,5 @@
 import { getStorefrontClient } from "./client";
-import { CART_CREATE, CART_LINES_ADD } from "./mutations";
+import { CART_CREATE, CART_LINES_ADD, CART_LINES_REMOVE } from "./mutations";
 import { CART_QUERY, PRODUCT_BY_HANDLE_QUERY, PRODUCTS_QUERY } from "./queries";
 import type {
   CartSnapshot,
@@ -174,6 +174,13 @@ type CartLinesAddResponse = {
   };
 };
 
+type CartLinesRemoveResponse = {
+  cartLinesRemove: {
+    cart: ShopifyCart | null;
+    userErrors: ShopifyUserError[];
+  };
+};
+
 type CartQueryResponse = {
   cart: ShopifyCart | null;
 };
@@ -228,4 +235,18 @@ export async function addCartLines(cartId: string, variantId: string, quantity: 
     throw new Error("Storefront cartLinesAdd did not return a cart.");
   }
   return mapCartToSnapshot(data.cartLinesAdd.cart);
+}
+
+export async function removeCartLines(cartId: string, lineIds: string[]): Promise<CartSnapshot> {
+  const client = getStorefrontClient();
+  const response = (await client.request(CART_LINES_REMOVE, {
+    variables: { cartId, lineIds },
+  })) as StorefrontResponse<CartLinesRemoveResponse>;
+
+  const data = assertData(response, "Storefront cartLinesRemove returned no data.");
+  assertNoUserErrors(data.cartLinesRemove.userErrors);
+  if (!data.cartLinesRemove.cart) {
+    throw new Error("Storefront cartLinesRemove did not return a cart.");
+  }
+  return mapCartToSnapshot(data.cartLinesRemove.cart);
 }

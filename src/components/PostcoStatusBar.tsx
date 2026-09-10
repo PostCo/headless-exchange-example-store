@@ -19,6 +19,7 @@
 
 import { useEffect, useState } from "react";
 import { type ExchangeController, type ExchangeState } from "@postco/headless-exchange-sdk";
+import { TestModeModal } from "./TestModeModal";
 
 const STYLES = `
 .postco-hxsb-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #000000; z-index: 999; font-family: inherit; font-size: 16px; line-height: 1.4; }
@@ -84,6 +85,8 @@ interface PostcoStatusBarProps {
 
 export function PostcoStatusBar({ controller }: PostcoStatusBarProps) {
   const [state, setState] = useState<ExchangeState>(() => controller.getState());
+  // Dev-only: which test-mode action to explain in the modal (null = hidden).
+  const [testModeAction, setTestModeAction] = useState<null | "proceed" | "cancel">(null);
 
   useEffect(() => {
     // `subscribe` fires once immediately with the current state, then on every
@@ -91,51 +94,63 @@ export function PostcoStatusBar({ controller }: PostcoStatusBarProps) {
     return controller.subscribe(setState);
   }, [controller]);
 
-  if (!state.isExchangeSession) return null;
-
   // Proceed is enabled only once the cart is ready (equivalent to the
   // `cart_ready` status): a cart exists and belongs to an exchange session.
   const canProceed = state.cartId != null;
 
   const handleProceed = (): void => {
+    // In test mode the SDK ends the session (bar drops) but does not redirect;
+    // show the modal to explain. Real mode redirects to the return center.
+    if (state.isTestMode) setTestModeAction("proceed");
     controller.proceedToExchange();
   };
 
   const handleCancel = async (): Promise<void> => {
+    // Test mode: no real return center — show the modal, skip the confirm.
+    if (state.isTestMode) {
+      setTestModeAction("cancel");
+      await controller.cancelExchange();
+      return;
+    }
     // Optional confirmation — this popup is yours to keep, restyle, or remove.
-    // Swap `window.confirm` for your own modal, or delete these two lines to
-    // cancel immediately. `cancelExchange` does the rest (clear cart + session,
-    // build the URL, redirect back).
+    // `cancelExchange` does the rest (clear cart + session, build the URL,
+    // redirect back).
     if (!window.confirm("Cancel this exchange? Your selected items will be removed.")) {
       return;
     }
     await controller.cancelExchange();
   };
 
+  // Render nothing when there's neither an active session nor a modal to show.
+  if (!state.isExchangeSession && !testModeAction) return null;
+
   return (
     <>
       <style>{STYLES}</style>
-      <div className="postco-hxsb-bar" role="region" aria-label="Exchange status">
-        <div className="postco-hxsb-content">
-          <div className="postco-hxsb-text">
-            <div className="postco-hxsb-mainline">{mainLineText(state)}</div>
-            {Number(state.bonusCredit) > 0 && (
-              <div className="postco-hxsb-subline">
-                {`${formatMoney(state.bonusCredit, state.currencyCode)} bonus credit included`}
-              </div>
-            )}
-          </div>
-          <div className="postco-hxsb-actions">
-            <button type="button" className="postco-hxsb-cancel" onClick={handleCancel}>
-              Cancel
-            </button>
-            <button type="button" className="postco-hxsb-proceed" onClick={handleProceed} disabled={!canProceed}>
-              <span className="postco-hxsb-label-desktop">Proceed with exchange</span>
-              <span className="postco-hxsb-label-mobile">Proceed</span>
-            </button>
+      {state.isExchangeSession && (
+        <div className="postco-hxsb-bar" role="region" aria-label="Exchange status">
+          <div className="postco-hxsb-content">
+            <div className="postco-hxsb-text">
+              <div className="postco-hxsb-mainline">{mainLineText(state)}</div>
+              {Number(state.bonusCredit) > 0 && (
+                <div className="postco-hxsb-subline">
+                  {`${formatMoney(state.bonusCredit, state.currencyCode)} bonus credit included`}
+                </div>
+              )}
+            </div>
+            <div className="postco-hxsb-actions">
+              <button type="button" className="postco-hxsb-cancel" onClick={handleCancel}>
+                Cancel
+              </button>
+              <button type="button" className="postco-hxsb-proceed" onClick={handleProceed} disabled={!canProceed}>
+                <span className="postco-hxsb-label-desktop">Proceed with exchange</span>
+                <span className="postco-hxsb-label-mobile">Proceed</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+      {testModeAction && <TestModeModal action={testModeAction} onClose={() => setTestModeAction(null)} />}
     </>
   );
 }

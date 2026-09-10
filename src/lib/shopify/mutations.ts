@@ -27,3 +27,17 @@ export const CART_LINES_ADD = `
     }
   }
 `;
+
+export const CART_LINES_REMOVE = `
+  mutation cartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
+    cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+      cart {
+        ${CART_SELECTION}
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
